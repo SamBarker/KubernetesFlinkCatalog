@@ -3,12 +3,15 @@ package io.kroxylicious;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.flink.table.catalog.CatalogDescriptor;
 import org.apache.flink.table.catalog.CatalogStore;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
+import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 
@@ -19,6 +22,7 @@ public class K8sCatalogStore implements CatalogStore {
             .withPlural("catalogs")
             .withScope("Namespaced")
             .withVersion("v1alpha1")
+            .withKind("FlinkCatalog")
             .build();
 
     private final KubernetesClient kubernetesClient;
@@ -42,7 +46,9 @@ public class K8sCatalogStore implements CatalogStore {
     @Override
     public Optional<CatalogDescriptor> getCatalog(String catalogName) throws CatalogException {
         final GenericKubernetesResource genericKubernetesResource = kubernetesClient.genericKubernetesResources(flinkCatalogResourceDefinitionContext)
-                .inNamespace(namespace).withName(catalogName).get();
+                .inNamespace(namespace)
+                .withName(catalogName)
+                .get();
         if (Objects.isNull(genericKubernetesResource)) {
             return Optional.empty();
         }
