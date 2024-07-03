@@ -90,6 +90,40 @@ class K8sCatalogStoreTest {
         assertThat(catalogs).hasSize(2);
     }
 
+    @Test
+    void shouldReturnFalseForContainsWhenCatalogDoesntExist() {
+        // Given
+        server.expect().get().withPath(BASE_CATALOGS_PATH)
+                .andReturn(HttpURLConnection.HTTP_OK,
+                        new FlinkCatalog.FlinkCatalogList(
+                                List.of(new FlinkCatalog("example-hello"),
+                                        new FlinkCatalog("the-other-catalog"))))
+                .once();
+
+        // When
+        final boolean contained = catalogStore.contains("unknown");
+
+        // Then
+        assertThat(contained).isFalse();
+    }
+
+    @Test
+    void shouldReturnTrueForContainsWhenCatalogDoesntExist() {
+        // Given
+        server.expect().get().withPath(BASE_CATALOGS_PATH)
+                .andReturn(HttpURLConnection.HTTP_OK,
+                        new FlinkCatalog.FlinkCatalogList(
+                                List.of(new FlinkCatalog("example-hello"),
+                                        new FlinkCatalog("the-other-catalog"))))
+                .once();
+
+        // When
+        final boolean contained = catalogStore.contains("example-hello");
+
+        // Then
+        assertThat(contained).isTrue();
+    }
+
     @AfterEach
     void tearDown() {
         if (server != null) {

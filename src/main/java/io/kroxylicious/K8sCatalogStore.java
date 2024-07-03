@@ -67,7 +67,7 @@ public class K8sCatalogStore implements CatalogStore {
 
     @Override
     public boolean contains(String s) throws CatalogException {
-        throw new UnsupportedOperationException("TODO");
+        return listCatalogs().contains(s);
     }
 
     @Override
