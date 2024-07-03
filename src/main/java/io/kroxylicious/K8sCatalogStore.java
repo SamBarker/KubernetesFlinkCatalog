@@ -59,7 +59,10 @@ public class K8sCatalogStore implements CatalogStore {
 
     @Override
     public Set<String> listCatalogs() throws CatalogException {
-        return Set.of();
+        final GenericKubernetesResourceList genericKubernetesResource = kubernetesClient.genericKubernetesResources(flinkCatalogResourceDefinitionContext)
+                .inNamespace(namespace)
+                .list();
+        return genericKubernetesResource.getItems().stream().map(GenericKubernetesResource::getMetadata).map(ObjectMeta::getName).collect(Collectors.toSet());
     }
 
     @Override

@@ -1,6 +1,7 @@
 package io.kroxylicious;
 
 import java.net.HttpURLConnection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -9,8 +10,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
-import io.fabric8.kubernetes.api.model.GenericKubernetesResourceBuilder;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 
@@ -24,6 +23,7 @@ class K8sCatalogStoreTest {
 
     private K8sCatalogStore catalogStore;
     private static final String NAMESPACE = "ns1";
+    private static final String BASE_CATALOGS_PATH = "/apis/test.fabric8.io/v1alpha1/namespaces/" + NAMESPACE + "/catalogs";
 
     @BeforeEach
     void setUp() {
@@ -57,7 +57,7 @@ class K8sCatalogStoreTest {
         // Given
         String jsonObject = "{\"apiVersion\": \"test.fabric8.io/v1alpha1\",\"kind\": \"Hello\"," +
                 "\"metadata\": {\"resourceVersion\":\"1\", \"name\": \"" + HELLO_CATALOG + "\"},\"spec\": {\"size\": 3}}";
-        server.expect().get().withPath("/apis/test.fabric8.io/v1alpha1/namespaces/" + NAMESPACE + "/catalogs/hello-catalog")
+        server.expect().get().withPath(BASE_CATALOGS_PATH + "/hello-catalog")
                 .andReturn(HttpURLConnection.HTTP_OK, jsonObject).once();
         final int initialRequestCount = server.getRequestCount();
 
@@ -67,6 +67,27 @@ class K8sCatalogStoreTest {
         // Then
         assertThat(server.getRequestCount()).isGreaterThanOrEqualTo(initialRequestCount + 1); //Ensure we made at least one request
         assertThat(catalog).isNotEmpty().get().extracting(CatalogDescriptor::getCatalogName).isEqualTo(HELLO_CATALOG);
+    }
+
+    @Test
+    void shouldListFlinkCatalogResources() {
+        // Given
+        // note the mock server does exact path matching so XXX/ and XXX are considered different paths. The client however strips trailing slashes so maps XXX/ to XXX
+        // A serious trap for unwary players
+        server.expect().get().withPath(BASE_CATALOGS_PATH)
+                .andReturn(HttpURLConnection.HTTP_OK,
+                        new FlinkCatalog.FlinkCatalogList(
+                                List.of(new FlinkCatalog("example-hello"),
+                                        new FlinkCatalog("the-other-catalog"))))
+                .once();
+        final int initialRequestCount = server.getRequestCount();
+
+        // When
+        final Set<String> catalogs = catalogStore.listCatalogs();
+
+        // Then
+        assertThat(server.getRequestCount()).isGreaterThanOrEqualTo(initialRequestCount + 1); //Ensure we made at least one request
+        assertThat(catalogs).hasSize(2);
     }
 
     @AfterEach
