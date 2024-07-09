@@ -1,5 +1,6 @@
 package io.kroxylicious;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -12,6 +13,7 @@ import org.apache.flink.table.catalog.exceptions.CatalogException;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
@@ -36,8 +38,11 @@ public class K8sCatalogStore implements CatalogStore {
     }
 
     @Override
-    public void removeCatalog(String s, boolean b) throws CatalogException {
-        throw new UnsupportedOperationException("TODO");
+    public void removeCatalog(String catalogName, boolean ignoreIfNotExists) throws CatalogException {
+        final List<StatusDetails> statusDetailsList = kubernetesClient.resource(new FlinkCatalog(catalogName)).inNamespace(namespace).delete();
+        if (!ignoreIfNotExists && statusDetailsList.isEmpty()) {
+            throw new CatalogException("unknown Catalog: " + catalogName);
+        }
     }
 
     @Override

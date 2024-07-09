@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.CatalogDescriptor;
+import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import io.kroxylicious.FlinkCatalog;
 import io.kroxylicious.K8sCatalogStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @EnableKubernetesMockClient(crud = true)
 class K8sCatalogStoreTest {
@@ -141,6 +143,57 @@ class K8sCatalogStoreTest {
         catalogStore.storeCatalog("example-hello", CatalogDescriptor.of("example-hello", new Configuration()));
 
         // Then
+        assertThat(server.getRequestCount()).isGreaterThanOrEqualTo(initialRequestCount + 1); //Ensure we made at least one request
+    }
+
+    @Test
+    void shouldDeleteCatalogResource() {
+        // Given
+        server.expect()
+                .delete()
+                .withPath(BASE_CATALOGS_PATH + "/example-hello")
+                .andReturn(HttpURLConnection.HTTP_OK, new FlinkCatalog("example-hello"))
+                .once();
+
+        final int initialRequestCount = server.getRequestCount();
+
+        // When
+        catalogStore.removeCatalog("example-hello", true);
+
+        // Then
+        assertThat(server.getRequestCount()).isGreaterThanOrEqualTo(initialRequestCount + 1); //Ensure we made at least one request
+    }
+
+    @Test
+    void shouldThrowWhenRemovingNonExistentCatalogResource() {
+        // Given
+        server.expect()
+                .delete()
+                .withPath(BASE_CATALOGS_PATH + "/example-hello")
+                .andReturn(HttpURLConnection.HTTP_NOT_FOUND, null)
+                .once();
+
+        // When
+        assertThatThrownBy(() -> catalogStore.removeCatalog("example-hello", false)).isInstanceOf(CatalogException.class);
+
+        // Then
+    }
+
+    @Test
+    void shouldNotThrowWhenRemovingNonExistentCatalogResource() {
+        // Given
+        server.expect()
+                .delete()
+                .withPath(BASE_CATALOGS_PATH + "/example-hello")
+                .andReturn(HttpURLConnection.HTTP_NOT_FOUND, null)
+                .once();
+        final int initialRequestCount = server.getRequestCount();
+
+        // When
+        catalogStore.removeCatalog("example-hello", true);
+
+        // Then
+        //not a great test, but proves we got here and the prod code did *something*
         assertThat(server.getRequestCount()).isGreaterThanOrEqualTo(initialRequestCount + 1); //Ensure we made at least one request
     }
 
