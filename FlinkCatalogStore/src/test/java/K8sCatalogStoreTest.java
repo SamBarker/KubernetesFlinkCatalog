@@ -3,6 +3,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.CatalogDescriptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -123,6 +124,24 @@ class K8sCatalogStoreTest {
 
         // Then
         assertThat(contained).isTrue();
+    }
+
+    @Test
+    void shouldCreateCatalogResource() {
+        // Given
+        server.expect()
+                .put()
+                .withPath(BASE_CATALOGS_PATH + "/example-hello")
+                .andReturn(HttpURLConnection.HTTP_OK, null)
+                .once();
+
+        final int initialRequestCount = server.getRequestCount();
+
+        // When
+        catalogStore.storeCatalog("example-hello", CatalogDescriptor.of("example-hello", new Configuration()));
+
+        // Then
+        assertThat(server.getRequestCount()).isGreaterThanOrEqualTo(initialRequestCount + 1); //Ensure we made at least one request
     }
 
     @AfterEach

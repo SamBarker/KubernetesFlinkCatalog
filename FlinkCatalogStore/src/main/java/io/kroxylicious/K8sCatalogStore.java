@@ -32,12 +32,7 @@ public class K8sCatalogStore implements CatalogStore {
 
     @Override
     public void storeCatalog(String catalogName, CatalogDescriptor catalogDescriptor) throws CatalogException {
-
-//        kubernetesClient.genericKubernetesResources(flinkCatalogResourceDefinitionContext)
-//                .resource(new FlinkCatalog(catalogName))
-//                .
-//                .create();
-
+        kubernetesClient.resource(new FlinkCatalog(catalogName)).inNamespace(namespace).create();
     }
 
     @Override
