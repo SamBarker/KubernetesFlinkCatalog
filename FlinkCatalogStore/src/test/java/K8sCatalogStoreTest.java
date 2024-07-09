@@ -1,5 +1,3 @@
-package io.kroxylicious;
-
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +11,9 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 
+import io.kroxylicious.FlinkCatalog;
+import io.kroxylicious.K8sCatalogStore;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @EnableKubernetesMockClient(crud = true)
@@ -23,7 +24,7 @@ class K8sCatalogStoreTest {
 
     private K8sCatalogStore catalogStore;
     private static final String NAMESPACE = "ns1";
-    private static final String BASE_CATALOGS_PATH = "/apis/test.fabric8.io/v1alpha1/namespaces/" + NAMESPACE + "/catalogs";
+    private static final String BASE_CATALOGS_PATH = "/apis/com.redhat.s4ak/v1alpha1/namespaces/" + NAMESPACE + "/flinkcatalogs";
 
     @BeforeEach
     void setUp() {

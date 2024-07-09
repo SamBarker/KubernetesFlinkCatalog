@@ -12,18 +12,15 @@ import org.apache.flink.table.catalog.exceptions.CatalogException;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 
 public class K8sCatalogStore implements CatalogStore {
-    private final CustomResourceDefinitionContext flinkCatalogResourceDefinitionContext = new CustomResourceDefinitionContext.Builder()
-            .withGroup("test.fabric8.io")
-            .withName("flinkCatalog.test.fabric8.io")
-            .withPlural("catalogs")
-            .withScope("Namespaced")
-            .withVersion("v1alpha1")
-            .withKind("FlinkCatalog")
+    public static final CustomResourceDefinition CATALOG_RESOURCE_DEFINITION = CustomResourceDefinitionContext.v1CRDFromCustomResourceType(
+                    FlinkCatalog.class)
             .build();
+    private static final CustomResourceDefinitionContext FLINK_CATALOG_RESOURCE_DEFINITION_CONTEXT = CustomResourceDefinitionContext.fromCrd(CATALOG_RESOURCE_DEFINITION);
 
     private final KubernetesClient kubernetesClient;
     private final String namespace;
@@ -34,8 +31,13 @@ public class K8sCatalogStore implements CatalogStore {
     }
 
     @Override
-    public void storeCatalog(String s, CatalogDescriptor catalogDescriptor) throws CatalogException {
-        throw new UnsupportedOperationException("TODO");
+    public void storeCatalog(String catalogName, CatalogDescriptor catalogDescriptor) throws CatalogException {
+
+//        kubernetesClient.genericKubernetesResources(flinkCatalogResourceDefinitionContext)
+//                .resource(new FlinkCatalog(catalogName))
+//                .
+//                .create();
+
     }
 
     @Override
@@ -45,7 +47,7 @@ public class K8sCatalogStore implements CatalogStore {
 
     @Override
     public Optional<CatalogDescriptor> getCatalog(String catalogName) throws CatalogException {
-        final GenericKubernetesResource genericKubernetesResource = kubernetesClient.genericKubernetesResources(flinkCatalogResourceDefinitionContext)
+        final GenericKubernetesResource genericKubernetesResource = kubernetesClient.genericKubernetesResources(FLINK_CATALOG_RESOURCE_DEFINITION_CONTEXT)
                 .inNamespace(namespace)
                 .withName(catalogName)
                 .get();
@@ -59,7 +61,7 @@ public class K8sCatalogStore implements CatalogStore {
 
     @Override
     public Set<String> listCatalogs() throws CatalogException {
-        final GenericKubernetesResourceList genericKubernetesResource = kubernetesClient.genericKubernetesResources(flinkCatalogResourceDefinitionContext)
+        final GenericKubernetesResourceList genericKubernetesResource = kubernetesClient.genericKubernetesResources(FLINK_CATALOG_RESOURCE_DEFINITION_CONTEXT)
                 .inNamespace(namespace)
                 .list();
         return genericKubernetesResource.getItems().stream().map(GenericKubernetesResource::getMetadata).map(ObjectMeta::getName).collect(Collectors.toSet());

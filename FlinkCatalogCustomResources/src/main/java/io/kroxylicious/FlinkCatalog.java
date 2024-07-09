@@ -6,16 +6,32 @@ import java.util.Objects;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.CatalogDescriptor;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import io.fabric8.generator.annotation.Required;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ListMeta;
 import io.fabric8.kubernetes.api.model.ListMetaBuilder;
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.ShortNames;
+import io.fabric8.kubernetes.model.annotation.Version;
 
-public class FlinkCatalog extends GenericKubernetesResource {
+@Group("com.redhat.s4ak")
+@Version("v1alpha1")
+@ShortNames("catalog")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class FlinkCatalog extends CustomResource<FlinkCatalog.FlinkCatalogSpec, FlinkCatalog.FlinkCatalogStaus> implements Namespaced {
 
-    private final String name;
+    private String name;
+
+    /* for fabric8 to use reflectively reflection*/
+    public FlinkCatalog() {
+    }
 
     public FlinkCatalog(String name) {
         this.name = name;
@@ -56,6 +72,16 @@ public class FlinkCatalog extends GenericKubernetesResource {
     public int hashCode() {
         return Objects.hash(super.hashCode(), name);
     }
+
+    public static class FlinkCatalogSpec {
+        @Required
+        String name;
+    }
+
+    public static class FlinkCatalogStaus {
+
+    }
+
 
     public static class FlinkCatalogList implements KubernetesResourceList<FlinkCatalog> {
         private final List<FlinkCatalog> catalogs;
